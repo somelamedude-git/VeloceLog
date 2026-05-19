@@ -22,6 +22,16 @@ class Topic{
     }
 
     incrementNextOffset(){
-        this.nextOffset++;
+        this.nextOffset+=1n;
+    }
+    
+    rolling(){
+        try{
+            const newLog = new LogSegment(this.topicDir, this.nextOffset);
+            this.activeSegment.switchToReadMode();
+            this.activeSegment = newLog;
+        } catch(error){
+            console.log(error);
+        }
     }
 }
