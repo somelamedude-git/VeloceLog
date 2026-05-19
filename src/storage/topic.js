@@ -35,3 +35,5 @@ class Topic{
         }
     }
 }
+
+module.exports = Topic;
