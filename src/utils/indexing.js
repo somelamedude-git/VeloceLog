@@ -1,7 +1,7 @@
 const {lowerBound} = require('./binarySearch');
 const mmap = require('mmap-io');
+const fs = require('fs');
 
-const NUM_ENTRIES=-1; //placeholder, will decide and change later
 const ENTRY_SIZE=12; 
 
 const TreeMapLookup = (segmentOffsets, targetOffset)=>{ // assuming segment offset to be a list of BigInts
@@ -13,6 +13,9 @@ const getRelativeOffset = (baseOffset, targetOffset)=>{
 }
 
 const getFileIndex = (indexFd, relativeOffset)=>{
+    const fileSize = fs.fstatSync(indexFd).size;
+    const NUM_ENTRIES = fileSize/ENTRY_SIZE;
+    
     const buffer = mmap.map(
         NUM_ENTRIES*ENTRY_SIZE,
         mmap.PROT_READ,
