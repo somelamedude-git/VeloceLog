@@ -25,12 +25,23 @@ const serializeRecord = (message, offset)=>{
     return frame;
 }
 
-const batchProcess = (messages, baseOffset, appendFd)=>{
+const batchProcess = (messages, baseOffset, appendLogFd, appendIndexFd, currentLogSize)=>{
+    let position = currentLogSize;
+
     for(let i=0; i<messages.length; i++){
         let offset = baseOffset + BigInt(i);
         const wrappedMessageBuf = serializeRecord(messages[i], offset);
-        fs.writeSync(appendFd, wrappedMessageBuf, 0, wrappedMessageBuf.length, null);
+        if(i%10==0){
+            const indexEntry = Buffer.allocUnsafe(12);
+            indexEntry.writeBigInt64BE(offset, 0);
+            indexEntry.writeUInt32BE(position, 8);
+            fs.writeSync(appendIndexFd, indexEntry, 0, indexEntry.length, null);
+        }
+
+        fs.writeSync(appendLogFd, wrappedMessageBuf, 0, wrappedMessageBuf.length, null);
+        position += wrappedMessageBuf.length;
     }
+    return position-currentLogSize;
 }
 module.exports = {
     HEADER_SIZE,
