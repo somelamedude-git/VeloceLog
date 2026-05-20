@@ -1,4 +1,4 @@
-const upperBound = (arr, target)=>{
+const lowerBound = (arr, target)=>{
     let low = 0;
     let high = arr.length-1;
     let floorIndex = 0;
@@ -18,4 +18,8 @@ const upperBound = (arr, target)=>{
     }
 
     return arr[floorIndex];
+}
+
+module.exports = {
+    lowerBound
 }
