@@ -79,6 +79,10 @@ class LogSegment {
         }
     }
 
+    _getBaseOffset(){
+        return this.baseOffset;
+    }
+
     closeReadDescriptors() {
         if (this.readLogFd !== undefined) {
             fs.closeSync(this.readLogFd);
