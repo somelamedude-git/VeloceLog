@@ -59,6 +59,14 @@ class LogSegment {
         return this.currentBytes >= this.maxBytes;
     }
 
+    _getAppendDescriptors(){
+        return [this.appendIndexFd, this.appendLogFd];
+    }
+
+    _getReadDescriptors(){
+        return [this.readIndexFd, this.readLogFd];
+    }
+
     closeAppendDescriptors() {
         if (this.appendLogFd !== undefined) {
             fs.closeSync(this.appendLogFd);
