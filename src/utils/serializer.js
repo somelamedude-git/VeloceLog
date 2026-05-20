@@ -1,5 +1,5 @@
-const { create } = require('node:domain');
 const { createCRC } = require('./payload.util');
+const fs = require('fs');
 
 const HEADER_SIZE=16;
 
@@ -25,7 +25,15 @@ const serializeRecord = (message, offset)=>{
     return frame;
 }
 
+const batchProcess = (messages, baseOffset, appendFd)=>{
+    for(let i=0; i<messages.length; i++){
+        let offset = baseOffset + BigInt(i);
+        const wrappedMessageBuf = serializeRecord(messages[i], offset);
+        fs.writeSync(appendFd, wrappedMessageBuf, 0, wrappedMessageBuf.length, null);
+    }
+}
 module.exports = {
     HEADER_SIZE,
-    serializeRecord
+    serializeRecord,
+    batchProcess
 }
