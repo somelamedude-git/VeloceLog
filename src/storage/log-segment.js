@@ -83,6 +83,14 @@ class LogSegment {
         return this.baseOffset;
     }
 
+    _getCurrentBytes(){
+        return this.currentBytes;
+    }
+
+    _incrementCurrentBytes(size){
+        this.currentBytes += size;
+    }
+
     closeReadDescriptors() {
         if (this.readLogFd !== undefined) {
             fs.closeSync(this.readLogFd);
