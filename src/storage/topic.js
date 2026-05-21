@@ -5,6 +5,17 @@ const {batchProcess, HEADER_SIZE} = require('../utils/serializer');
 
 //check in the api if the topic directory is already existing, so topicDir will essentially be passed form the api if it is not duplicated.
 
+// segment = { (remember this format)
+//     appendLogFd: 'x',
+//     appendIndexFd: 'x',
+//     readLogFd: 'x',
+//     readIndexFd: 'x',
+//     startingOffset: 'x',
+//     indexPath: 'x',
+//     logPath: 'x',
+//     baseOffset: 'x'
+// }
+
 class Topic{
     constructor(userId, topicName, topicDir){
         this.name = topicName;
@@ -12,10 +23,27 @@ class Topic{
         this.topicDir = topicDir;
         this.nextOffset = 0n;
         this.activeSegment = new LogSegment(this.topicDir, this.nextOffset);
+        this.segments = []; // essentially an array
     }
 
     changeActiveSegment(segment){ // segment will be an object here, lead with apis which trigger appending data, incase new segment gets made
         this.activeSegment = segment;
+    }
+
+    initalizeSegArr(){ // this method must only be called during initialization
+        const appendDescriptors = this.activeSegment._getAppendDescriptors();
+        const readDescriptors = this.activeSegment._getReadDescriptors(); // I write these little comments for amusement :)
+        const filePaths = this.activeSegment._getFilePaths();
+
+        this.segments.push({ // the last entry in the array will obviously be the active segment, so i am planning to remove the reducdancy later
+            appendLogFd : appendDescriptors[1],
+            appendIndexFd: appendDescriptors[0],
+            readLogFd: readDescriptors[1],
+            readIndexFd: readDescriptors[0],
+            indexPath: filePaths[1],
+            logPath: filePaths[0],
+            baseOffset: 0n
+        });
     }
 
     getNextOffset(){

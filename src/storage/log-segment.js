@@ -40,6 +40,10 @@ class LogSegment {
         this.currentBytes = stats.size;
     }
 
+    _getFilePaths(){
+        return [this.logPath, this.indexPath];
+    }
+
     _ensureFile(filePath) {
         const fd = fs.openSync(filePath, 'a');
         fs.closeSync(fd);
