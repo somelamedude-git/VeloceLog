@@ -54,7 +54,7 @@ const batchProcessFaster = (messages, baseOffset, appendLogFd, appendIndexFd, cu
     for(let i=0; i<numMessages; i++){
         const len = Buffer.byteLength(messages[i], 'utf-8');
         lengths[i] = len;
-        totalPayloadBytes += Buffer.byteLength(messages[i], 'utf-8');
+        totalPayloadBytes += len;
     }
 
     const totalLogBufferSize = (HEADER_SIZE*numMessages)+totalPayloadBytes;
@@ -73,7 +73,7 @@ const batchProcessFaster = (messages, baseOffset, appendLogFd, appendIndexFd, cu
 
         if(i%10==0){
             indexLogBuffer.writeBigInt64BE(offset, indexCursor);
-            indexLogBuffer.writeUInt32BE(payLoadLength, indexCursor+8);
+            indexLogBuffer.writeUInt32BE(currentPosition, indexCursor+8);
             indexCursor += ENTRY_SIZE;
         }
 
@@ -81,7 +81,7 @@ const batchProcessFaster = (messages, baseOffset, appendLogFd, appendIndexFd, cu
         batchLogBuffer.writeUInt32BE(payLoadLength, logCursor+8);
         batchLogBuffer.write(messages[i], logCursor+16, payLoadLength, 'utf-8');
 
-        const payloadSlice = batchLogBuffer.subarray(logCursor + 16, logCursor + 16 + payloadLength);
+        const payloadSlice = batchLogBuffer.subarray(logCursor + 16, logCursor + 16 + payLoadLength);
         const crc = createCRC(payloadSlice);
 
         batchLogBuffer.writeUInt32BE(crc, logCursor+12);
@@ -101,5 +101,5 @@ const batchProcessFaster = (messages, baseOffset, appendLogFd, appendIndexFd, cu
 module.exports = {
     HEADER_SIZE,
     serializeRecord,
-    batchProcess
+    batchProcess: batchProcessFaster
 }
