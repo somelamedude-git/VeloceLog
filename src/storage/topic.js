@@ -2,6 +2,7 @@ const fs = require('fs');
 const LogSegment = require('./log-segment');
 const path = require('path');
 const {batchProcess, HEADER_SIZE} = require('../utils/serializer');
+const { TreeMapLookup } = require('../utils/indexing');
 
 //check in the api if the topic directory is already existing, so topicDir will essentially be passed form the api if it is not duplicated.
 
@@ -33,6 +34,12 @@ class Topic{
     }
 
     pushSegArr(baseOffset){ // this method must only be called during initialization
+
+        if(this.segments.length>0){
+            this.segments[this.segments.length-1].appendLogFd = undefined;
+            this.segments[this.segments.length-1].appendIndexFd = undefined;
+        }
+        
         const appendDescriptors = this.activeSegment._getAppendDescriptors();
         const readDescriptors = this.activeSegment._getReadDescriptors(); // I write these little comments for amusement :)
         const filePaths = this.activeSegment._getFilePaths();
@@ -91,6 +98,14 @@ class Topic{
 
         this.activeSegment._incrementCurrentBytes(sizeAdded);
         this.nextOffset += BigInt(numMessages);
+    }
+
+    read(targetOffset){
+        const reqFileIndex = TreeMapLookup(this.segments, targetOffset)[0];
+        const logFilePath = this.segments[reqFileIndex].readLogFd;
+        const indexFilePath = this.segments[reqFileIndex].readIndexFd;
+
+
     }
 }
 
