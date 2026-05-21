@@ -87,6 +87,10 @@ class LogSegment {
         return this.currentBytes;
     }
 
+    _getCurrentSpace(){
+        return this.maxBytes-this.currentBytes;
+    }
+
     _incrementCurrentBytes(size){
         this.currentBytes += size;
     }
