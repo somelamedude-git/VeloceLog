@@ -24,13 +24,15 @@ class Topic{
         this.nextOffset = 0n;
         this.activeSegment = new LogSegment(this.topicDir, this.nextOffset);
         this.segments = []; // essentially an array
+
+        this.pushSegArr(0n);
     }
 
     changeActiveSegment(segment){ // segment will be an object here, lead with apis which trigger appending data, incase new segment gets made
         this.activeSegment = segment;
     }
 
-    initalizeSegArr(){ // this method must only be called during initialization
+    pushSegArr(baseOffset){ // this method must only be called during initialization
         const appendDescriptors = this.activeSegment._getAppendDescriptors();
         const readDescriptors = this.activeSegment._getReadDescriptors(); // I write these little comments for amusement :)
         const filePaths = this.activeSegment._getFilePaths();
@@ -42,7 +44,7 @@ class Topic{
             readIndexFd: readDescriptors[0],
             indexPath: filePaths[1],
             logPath: filePaths[0],
-            baseOffset: 0n
+            baseOffset: baseOffset
         });
     }
 
@@ -59,6 +61,8 @@ class Topic{
             const newLog = new LogSegment(this.topicDir, this.nextOffset);
             this.activeSegment.switchToReadMode();
             this.activeSegment = newLog;
+
+            this.pushSegArr(this.nextOffset);
         } catch(error){
             console.log(error);
         }
