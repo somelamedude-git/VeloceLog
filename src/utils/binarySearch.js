@@ -5,7 +5,7 @@ const lowerBound = (arr, target)=>{
 
     while(low<=high){
         const mid = (low+high)>>1;
-        const currentOffset = arr[mid];
+        const currentOffset = arr[mid].baseOffset;
 
         if(currentOffset == target) return currentOffset;
         else if(currentOffset<target){
@@ -17,7 +17,7 @@ const lowerBound = (arr, target)=>{
         }
     }
 
-    return arr[floorIndex];
+    return [floorIndex, arr[floorIndex].baseOffset];
 }
 
 module.exports = {

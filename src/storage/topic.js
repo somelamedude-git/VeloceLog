@@ -1,6 +1,4 @@
-const fs = require('fs');
 const LogSegment = require('./log-segment');
-const path = require('path');
 const {batchProcess, HEADER_SIZE} = require('../utils/serializer');
 const { TreeMapLookup, getFileIndex } = require('../utils/indexing');
 const {procureRecord} = require('../utils/read');
@@ -102,7 +100,7 @@ class Topic{
     }
 
     read(targetOffset){
-        const reqFileIndex = TreeMapLookup(this.segments, targetOffset)[0];
+        const [reqFileIndex] = TreeMapLookup(this.segments, targetOffset);
         const logFileFd = this.segments[reqFileIndex].readLogFd;
         const indexFileFd = this.segments[reqFileIndex].readIndexFd;
         const logAbsByte = getFileIndex(indexFileFd, targetOffset); 

@@ -1,4 +1,4 @@
-const {createCRC} = require('../utils/payload.util');
+ummconst {createCRC} = require('../utils/payload.util');
 const {HEADER_SIZE} = require('./serializer');
 const fs = require('fs');
 
@@ -28,7 +28,7 @@ const procureRecord = (currByte, targetOffset, readLogFd)=>{
     if(finalOffset != targetOffset) return null;
 
     const payloadBuffer = Buffer.allocUnsafe(payloadLength);
-    fs.readSync(readLogFd, payloadBuffer, payloadLength, currByte+HEADER_SIZE);
+    fs.readSync(readLogFd, payloadBuffer, 0, payloadLength, currByte + HEADER_SIZE);
 
     if(createCRC(payloadBuffer) != storedCRC){
         throw new Error('Data Corruption, CRC mismatch');
