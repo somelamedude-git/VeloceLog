@@ -2,7 +2,8 @@ const fs = require('fs');
 const LogSegment = require('./log-segment');
 const path = require('path');
 const {batchProcess, HEADER_SIZE} = require('../utils/serializer');
-const { TreeMapLookup } = require('../utils/indexing');
+const { TreeMapLookup, getFileIndex } = require('../utils/indexing');
+const {procureRecord} = require('../utils/read');
 
 //check in the api if the topic directory is already existing, so topicDir will essentially be passed form the api if it is not duplicated.
 
@@ -39,7 +40,7 @@ class Topic{
             this.segments[this.segments.length-1].appendLogFd = undefined;
             this.segments[this.segments.length-1].appendIndexFd = undefined;
         }
-        
+
         const appendDescriptors = this.activeSegment._getAppendDescriptors();
         const readDescriptors = this.activeSegment._getReadDescriptors(); // I write these little comments for amusement :)
         const filePaths = this.activeSegment._getFilePaths();
@@ -102,10 +103,10 @@ class Topic{
 
     read(targetOffset){
         const reqFileIndex = TreeMapLookup(this.segments, targetOffset)[0];
-        const logFilePath = this.segments[reqFileIndex].readLogFd;
-        const indexFilePath = this.segments[reqFileIndex].readIndexFd;
-
-
+        const logFileFd = this.segments[reqFileIndex].readLogFd;
+        const indexFileFd = this.segments[reqFileIndex].readIndexFd;
+        const logAbsByte = getFileIndex(indexFileFd, targetOffset); 
+        return procureRecord(logAbsByte, targetOffset, logFileFd);
     }
 }
 
