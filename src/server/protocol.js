@@ -1,18 +1,23 @@
 // [frame_length (4B)][reqCode (1B)][user_id_length (4B)][user_id (variable)][topic_length (4B)][topic_name (variable)][number of messages (4B)][[message_size, message]]
 
-const wrapMessage = (userId, topicName, messages, reqCode) => {
+const wrapMessage = (userId, topicName, messages, reqCode, offset = null) => {
     const userIdByteLength = Buffer.byteLength(userId, 'utf-8');
     const topicByteLength = Buffer.byteLength(topicName, 'utf-8');
 
-    const messageLengths = messages.map(m => Buffer.byteLength(m, 'utf-8'));
-    const totalMsgBytes = messageLengths.reduce((sum, l) => sum + 4 + l, 0);
+    let frameSize;
+    let messageLengths = [];
 
- 
-    const frameSize = 4 + 1 + 4 + userIdByteLength + 4 + topicByteLength + 4 + totalMsgBytes;
+    if (reqCode === 0) {
+        messageLengths = messages.map(m => Buffer.byteLength(m, 'utf-8'));
+        const totalMsgBytes = messageLengths.reduce((sum, l) => sum + 4 + l, 0);
+        frameSize = 4 + 1 + 4 + userIdByteLength + 4 + topicByteLength + 4 + totalMsgBytes;
+    } else {
+        frameSize = 4 + 1 + 4 + userIdByteLength + 4 + topicByteLength + 8;
+    }
+
     const frame = Buffer.allocUnsafe(frameSize);
+    let cursor = 4;
 
-    let cursor = 4; 
-    
     frame.writeUInt8(reqCode, cursor);
     cursor += 1;
 
@@ -26,23 +31,24 @@ const wrapMessage = (userId, topicName, messages, reqCode) => {
     frame.write(topicName, cursor, topicByteLength, 'utf-8');
     cursor += topicByteLength;
 
-    const len = messages.length;
-    frame.writeUInt32BE(len, cursor);
-    cursor += 4;
-
-    for (let i = 0; i < len; i++) {
-        const msg = messages[i];
-        const msgLen = messageLengths[i]; 
-        
-        frame.writeUInt32BE(msgLen, cursor);
+    if (reqCode === 0) {
+        const len = messages.length;
+        frame.writeUInt32BE(len, cursor);
         cursor += 4;
 
-        frame.write(msg, cursor, msgLen, 'utf-8');
-        cursor += msgLen;
+        for (let i = 0; i < len; i++) {
+            const msgLen = messageLengths[i];
+            frame.writeUInt32BE(msgLen, cursor);
+            cursor += 4;
+            frame.write(messages[i], cursor, msgLen, 'utf-8');
+            cursor += msgLen;
+        }
+    } else {
+        frame.writeBigInt64BE(BigInt(offset), cursor);
+        cursor += 8;
     }
 
     frame.writeUInt32BE(cursor, 0);
-
     return frame.subarray(0, cursor);
 }
 
@@ -64,25 +70,26 @@ const parseMessage = (buffer)=>{
     const topicName = buffer.toString('utf-8', cursor, cursor+topicByteLength);
     cursor+=topicByteLength;
 
-    const numMessages = buffer.readUInt32BE(cursor);
-    cursor+=4;
+    if (reqCode === 0) {
+        const numMessages = buffer.readUInt32BE(cursor);
+        cursor += 4;
 
-    let messages = [];
+        let messages = [];
 
-    for(let i=0; i<numMessages; i++){
-        const msgLength = buffer.readUInt32BE(cursor);
-        cursor+=4;
+        for (let i = 0; i < numMessages; i++) {
+            const msgLength = buffer.readUInt32BE(cursor);
+            cursor += 4;
 
-        const msg = buffer.toString('utf-8', cursor, cursor+msgLength);
-        messages.push(msg);
-        cursor+= msgLength;
-    }
+            const msg = buffer.toString('utf-8', cursor, cursor + msgLength);
+            messages.push(msg);
+            cursor += msgLength;
+        }
 
-    return {
-        reqCode: reqCode,
-        userId: userId,
-        topicName: topicName,
-        messages: messages
+        return { reqCode, userId, topicName, messages };
+
+    } else if (reqCode === 1) {
+        const offset = buffer.readBigInt64BE(cursor);
+        return { reqCode, userId, topicName, offset };
     }
 }
 
