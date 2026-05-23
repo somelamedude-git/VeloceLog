@@ -1,4 +1,4 @@
-ummconst {createCRC} = require('../utils/payload.util');
+const {createCRC} = require('../utils/payload.util');
 const {HEADER_SIZE} = require('./serializer');
 const fs = require('fs');
 

@@ -34,7 +34,7 @@ class TopicManager{ // I keep one topic manager per user
     }
     fetchTopic(topicName){
         return this.topics.get(topicName);
-    }
+    } 
 }
 
 module.exports = TopicManager;
