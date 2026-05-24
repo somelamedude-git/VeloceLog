@@ -1,9 +1,14 @@
 // gonna create a map of userIds mapping to Topic Managers, soon, ouch.
 
+const TopicManager = require('./topicManager');
+
 const proxyMap = new Map(); // a placeholder so vs code doesnt throw errors at me
 // whenever a user creates an id, just make a topic manager for them.
 
-
+const registerUser = (userId)=>{
+    const topicManager = new TopicManager(userId);
+    proxyMap.set(userId, topicManager);
+}
 
 const readMessage = (userId, topicName, targetOffset)=>{
     const topicManagerUser = proxyMap.get(userId);
@@ -21,6 +26,9 @@ const appendMessage = (userId, topicName, messages)=>{ // messages will be a lis
 }
 
 const handleRequest = (userId, topicName, reqCode, messages=null, targetOffset=null)=>{ // here, reqCode=0 means append, reqCode=1 means read
+    if(!proxyMap.has(userId)){
+        registerUser(userId);
+    }
     if(reqCode==0){
         appendMessage(userId, topicName, messages);
     }
@@ -30,5 +38,6 @@ const handleRequest = (userId, topicName, reqCode, messages=null, targetOffset=n
 }
 
 module.exports = {
-    handleRequest
+    handleRequest,
+    registerUser
 }
