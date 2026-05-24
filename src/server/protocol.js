@@ -93,7 +93,50 @@ const parseMessage = (buffer)=>{
     }
 }
 
+// status will be one byte, offset will be 8, if available.
+// also respond to request in batches, but thats a future optimization
+
+const wrapResponse = (status, reqCode, message=null, offset=null)=>{ // the message is for fetch, and the offset is for append
+    let size;
+    let msgLength = 0;
+    if(offset){
+        size = 4 + 1 + 1 + 8;
+    }
+    else{
+        msgLength = Buffer.byteLength(message, 'utf-8');
+        size = 4 + 1 + 1 + 4 + msgLength;
+    }
+
+    const buffer = Buffer.allocUnsafe(size);
+    let cursor = 0;
+
+    buffer.writeUInt32BE(size, cursor);
+    cursor+=4;
+
+    buffer.writeUInt8(status, cursor);
+    cursor+=1;
+
+    buffer.writeUInt8(reqCode, cursor);
+    cursor+=1;
+
+    if(msgLength>0){
+        buffer.writeUInt32BE(msgLength, cursor);
+        cursor+=4;
+
+        buffer.write(message, cursor, msgLength, 'utf-8');
+        cursor+=msgLength;
+    }
+
+    else{
+        buffer.writeBigInt64BE(offset, cursor);
+        cursor+=8;
+    }
+
+    return buffer;
+}
+
 module.exports = {
     wrapMessage,
-    parseMessage
+    parseMessage,
+    wrapResponse
 }
