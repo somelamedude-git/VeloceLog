@@ -135,8 +135,37 @@ const wrapResponse = (status, reqCode, message=null, offset=null)=>{ // the mess
     return buffer;
 }
 
+const killMeNow = (buffer) => {
+    let cursor = 4; 
+    const status = buffer.readUInt8(cursor);
+    cursor += 1;
+
+    if (status !== 0) {
+        console.error(`[Protocol Error] Received non-zero status: ${status}`);
+        throw Error('ouch');
+    }
+
+    const reqCode = buffer.readUInt8(cursor);
+    cursor += 1;
+
+    if (reqCode === 0) {
+        const offset = buffer.readBigUInt64BE(cursor);
+        cursor += 8; 
+        return { type: 'append', status, reqCode, offset };
+        
+    } else { 
+        const msgLength = buffer.readUInt32BE(cursor); 
+        cursor += 4;
+        
+        const message = buffer.toString('utf-8', cursor, cursor + msgLength);
+        cursor += msgLength;
+        
+        return { type: 'fetch', status, reqCode, message };
+    }
+}
 module.exports = {
     wrapMessage,
     parseMessage,
-    wrapResponse
+    wrapResponse,
+    parseResponse:killMeNow
 }
