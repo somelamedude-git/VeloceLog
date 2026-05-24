@@ -1,6 +1,6 @@
 const net = require('net');
 const PORT = 8000;
-const { wrapMessage, parseMessage } = require('./protocol');
+const { wrapResponse, parseMessage } = require('./protocol');
 const { handleRequest } = require('../storage/request-handler');
 
 const server = net.createServer((socket)=>{
@@ -18,7 +18,22 @@ const server = net.createServer((socket)=>{
             try{
                 const parsed = parseMessage(completeFrame);
 
-                handleRequest(parsed.userId, parsed.topicName, parsed.reqCode, parsed.messages, parsed.offset);
+                const result = handleRequest(parsed.userId, parsed.topicName, parsed.reqCode, parsed.messages, parsed.offset);
+                const status= result.status;
+
+                let message = null;
+                let offset = null;
+
+                if(parsed.reqCode===0){
+                    offset=result.baseOffset;
+                }
+                else{
+                    message = result.result.message;
+                    offset = result.result.offset;
+                }
+
+                const messageBuf = wrapResponse(status, parsed.reqCode, message, offset);
+                socket.write(messageBuf);
             }
             catch(error){
                 console.error(error);

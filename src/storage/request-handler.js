@@ -15,14 +15,22 @@ const readMessage = (userId, topicName, targetOffset)=>{
     const topic = topicManagerUser.fetchTopic(topicName);
 
     const result = topic.read(targetOffset);
-    return result; // the result contains message and the offset
+    return {
+        status: 0,
+        result: result
+    };
 }
 
 const appendMessage = (userId, topicName, messages)=>{ // messages will be a list, as they will be sent in batches
     const topicManagerUser = proxyMap.get(userId);
     const topic = topicManagerUser.getOrCreate(topicName);
 
+    const baseOffset = topic.getNextOffset();
     topic.write(messages);
+    return {
+        status: 0,
+        baseOffset: baseOffset
+    };
 }
 
 const handleRequest = (userId, topicName, reqCode, messages=null, targetOffset=null)=>{ // here, reqCode=0 means append, reqCode=1 means read
@@ -30,7 +38,7 @@ const handleRequest = (userId, topicName, reqCode, messages=null, targetOffset=n
         registerUser(userId);
     }
     if(reqCode==0){
-        appendMessage(userId, topicName, messages);
+        return appendMessage(userId, topicName, messages);
     }
     else if(reqCode==1){
         return readMessage(userId, topicName, targetOffset);

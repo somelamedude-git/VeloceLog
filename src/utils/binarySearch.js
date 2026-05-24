@@ -7,7 +7,7 @@ const lowerBound = (arr, target)=>{
         const mid = (low+high)>>1;
         const currentOffset = arr[mid].baseOffset;
 
-        if(currentOffset == target) return currentOffset;
+        if(currentOffset == target) return [mid, currentOffset];
         else if(currentOffset<target){
             floorIndex = mid;
             low = mid+1;

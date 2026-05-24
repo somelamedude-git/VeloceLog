@@ -99,12 +99,12 @@ const parseMessage = (buffer)=>{
 const wrapResponse = (status, reqCode, message=null, offset=null)=>{ // the message is for fetch, and the offset is for append
     let size;
     let msgLength = 0;
-    if(offset){
+    if(reqCode === 0){ // APPEND response: status + reqCode + offset
         size = 4 + 1 + 1 + 8;
     }
-    else{
+    else{ // FETCH response: status + reqCode + offset + msgLength + message
         msgLength = Buffer.byteLength(message, 'utf-8');
-        size = 4 + 1 + 1 + 4 + msgLength;
+        size = 4 + 1 + 1 + 8 + 4 + msgLength;
     }
 
     const buffer = Buffer.allocUnsafe(size);
@@ -119,17 +119,15 @@ const wrapResponse = (status, reqCode, message=null, offset=null)=>{ // the mess
     buffer.writeUInt8(reqCode, cursor);
     cursor+=1;
 
-    if(msgLength>0){
+    buffer.writeBigInt64BE(BigInt(offset), cursor);
+    cursor+=8;
+
+    if(reqCode === 1){
         buffer.writeUInt32BE(msgLength, cursor);
         cursor+=4;
 
         buffer.write(message, cursor, msgLength, 'utf-8');
         cursor+=msgLength;
-    }
-
-    else{
-        buffer.writeBigInt64BE(offset, cursor);
-        cursor+=8;
     }
 
     return buffer;
@@ -154,13 +152,16 @@ const killMeNow = (buffer) => {
         return { type: 'append', status, reqCode, offset };
         
     } else { 
+        const offset = buffer.readBigUInt64BE(cursor);
+        cursor += 8;
+
         const msgLength = buffer.readUInt32BE(cursor); 
         cursor += 4;
         
         const message = buffer.toString('utf-8', cursor, cursor + msgLength);
         cursor += msgLength;
         
-        return { type: 'fetch', status, reqCode, message };
+        return { type: 'fetch', status, reqCode, offset, message };
     }
 }
 module.exports = {
