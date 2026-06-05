@@ -4,29 +4,6 @@ const fs = require('fs');
 const HEADER_SIZE=16;
 const ENTRY_SIZE = 12;
 
-const serializeRecord = (message, offset)=>{
-    const payLoadBuf = Buffer.from(message, 'utf-8');
-    const bufferLength = payLoadBuf.length;
-
-    const frame = Buffer.allocUnsafe(bufferLength+HEADER_SIZE);
-    let cursor = 0;
-
-    const crc = createCRC(payLoadBuf);
-
-    frame.writeBigInt64BE(BigInt(offset), cursor);
-    cursor+=8;
-
-    frame.writeUInt32BE(bufferLength, cursor);
-    cursor+=4;
-
-    frame.writeUInt32BE(crc, cursor);
-    cursor+=4;
-
-    payLoadBuf.copy(frame, cursor);
-    return frame;
-}
-
-
 const batchProcessFaster = (messages, baseOffset, appendLogFd, appendIndexFd, currentLogSize)=>{
     const numMessages = messages.length;
     let totalPayloadBytes = 0;
@@ -81,6 +58,5 @@ const batchProcessFaster = (messages, baseOffset, appendLogFd, appendIndexFd, cu
 
 module.exports = {
     HEADER_SIZE,
-    serializeRecord,
     batchProcess: batchProcessFaster
 }
